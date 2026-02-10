@@ -156,6 +156,10 @@
     border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
     background: color-mix(in oklab, var(--accent) 14%, var(--card));
   }
+  .ghost{
+    border-color: color-mix(in oklab, var(--muted) 30%, var(--line));
+    background: transparent;
+  }
 
   .section{
     margin-bottom: 14px;
@@ -171,6 +175,10 @@
     color: color-mix(in oklab, var(--text) 88%, var(--muted));
     border-bottom: 1px solid var(--line);
     background: color-mix(in oklab, var(--card2) 94%, transparent);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
   }
 
   .row{
@@ -283,6 +291,71 @@
     margin:0;
     padding-left: 18px;
   }
+
+  /* Ranking table */
+  .rank-table{
+    width:100%;
+    border-collapse: collapse;
+    overflow:hidden;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: color-mix(in oklab, var(--card) 92%, transparent);
+  }
+  .rank-table th, .rank-table td{
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+    text-align:left;
+  }
+  .rank-table th{
+    font-weight: 900;
+    background: color-mix(in oklab, var(--card2) 92%, transparent);
+    color: color-mix(in oklab, var(--text) 90%, var(--muted));
+  }
+  .rank-table tr:last-child td{ border-bottom: none; }
+
+  /* Semester select screen */
+  .center{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height: calc(100vh - 44px);
+  }
+  .choice{
+    max-width: 780px;
+    width: 100%;
+  }
+  .choice-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  @media(max-width: 700px){
+    .choice-grid{ grid-template-columns: 1fr; }
+  }
+  .choice-card{
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, color-mix(in oklab, var(--card) 92%, transparent), color-mix(in oklab, var(--card2) 92%, transparent));
+    box-shadow: var(--shadow);
+  }
+  .choice-card h2{
+    margin:0 0 6px;
+    font-size: 18px;
+  }
+  .choice-card p{
+    margin:0 0 12px;
+    color: var(--muted);
+    line-height:1.35;
+    font-size: 13px;
+  }
+  .choice-card .controls{
+    justify-content:flex-start;
+  }
+
+  .hide{ display:none !important; }
 </style>
 </head>
 
@@ -291,7 +364,7 @@
     <header>
       <div>
         <h1>Подсчёт баллов за проекты Blender</h1>
-        <p class="sub">Выбери тип проекта → выставь пункты в списках → итог посчитается автоматически.</p>
+        <p class="sub" id="subtitle">Сначала выбери семестр.</p>
       </div>
 
       <div class="top-actions">
@@ -302,62 +375,107 @@
       </div>
     </header>
 
-    <div class="layout">
-      <!-- LEFT -->
-      <section class="card">
-        <div class="card-header">
-          <p class="title">Критерии оценивания</p>
-          <div class="controls">
-            <button id="btnReset">Сбросить</button>
-            <button class="primary" id="btnCopy">Скопировать результат</button>
+    <!-- ===== Screen: Semester choice ===== -->
+    <section id="screenSemester" class="center">
+      <div class="choice">
+        <div class="note">
+          <b>Выбор семестра</b><br>
+          1 семестр — упрощённая проверка базовых навыков.<br>
+          2 семестр — развернутая система по типам проектов.
+        </div>
+
+        <div class="choice-grid">
+          <div class="choice-card">
+            <h2>1 семестр</h2>
+            <p>Критерии: результат, материалы, освещение, модели, анимация. Итог + оценка по шкале.</p>
+            <div class="controls">
+              <button class="primary" id="btnGoS1">Перейти</button>
+            </div>
+          </div>
+          <div class="choice-card">
+            <h2>2 семестр</h2>
+            <p>Критерии по типам проектов (диорама/анимация/hard-surface/локация/заготовка) + общие критерии.</p>
+            <div class="controls">
+              <button class="primary" id="btnGoS2">Перейти</button>
+            </div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="card-body" id="criteriaContainer">
-          <div class="note">Сначала выбери тип проекта справа.</div>
-        </div>
-
-        <div class="total">
-          <strong>Финальный балл</strong>
-          <div class="sum"><span id="totalScore">0</span><small>баллов</small></div>
-        </div>
-      </section>
-
-      <!-- RIGHT -->
-      <aside class="card">
-        <div class="card-header">
-          <p class="title">Параметры</p>
-        </div>
-        <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
-          <div>
-            <div class="label">Тип проекта</div>
-            <select id="projectType">
-              <option value="" selected disabled>— выбрать —</option>
-              <option value="diorama">Диорама</option>
-              <option value="animation">Анимация</option>
-              <option value="hard">Hard-surface модель</option>
-              <option value="location">Локация</option>
-              <option value="template">Проект из заготовки</option>
-            </select>
+    <!-- ===== Screen: Grading app ===== -->
+    <section id="screenApp" class="hide">
+      <div class="layout">
+        <!-- LEFT -->
+        <section class="card">
+          <div class="card-header">
+            <p class="title" id="leftTitle">Критерии оценивания</p>
+            <div class="controls">
+              <button class="ghost" id="btnBack">← К выбору семестра</button>
+              <button id="btnReset">Сбросить</button>
+              <button class="primary" id="btnCopy">Скопировать результат</button>
+            </div>
           </div>
 
-          <div class="note" id="typeNote">
-            <b>Мини-инструкция</b>
-            <ol class="mini">
-              <li>Выбери тип проекта.</li>
-              <li>Пройдись по критериям и выбери подходящие под проект ученика варианты.</li>
-              <li>Баллы по пунктам находятся справа, а итог — внизу.</li>
-              <li>Нажми «Скопировать результат», при необходимости зафиксировать результат ученика.</li>
-              <li>Нажми «Сбросить», чтобы сбросить текущий выбор для перехода к оцениванию нового проекта.</li>
-            </ol>
+          <div class="card-body" id="criteriaContainer">
+            <div class="note">Сначала выбери настройки справа.</div>
           </div>
 
-          <div class="note" id="extraNote">
-            К каждому типу проектов применяется основной набор критериев + критерии для этого типа проектов. Для проектов из заготовки используется отдельный набор критериев.
+          <div class="total">
+            <strong>Финальный балл <span id="gradeInline" style="font-weight:900;"></span></strong>
+            <div class="sum"><span id="totalScore">0</span><small>баллов</small></div>
           </div>
-        </div>
-      </aside>
-    </div>
+        </section>
+
+        <!-- RIGHT -->
+        <aside class="card">
+          <div class="card-header">
+            <p class="title">Параметры</p>
+          </div>
+          <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
+            <div id="rightSemesterInfo" class="note">
+              <b>Мини-инструкция</b>
+              <ol class="mini">
+                <li>Выбери параметры (семестр/тип проекта).</li>
+                <li>Пройдись по критериям и выбери варианты.</li>
+                <li>Итоговый балл и оценка — внизу слева.</li>
+                <li>«Скопировать результат» — чтобы вставить в журнал.</li>
+              </ol>
+            </div>
+
+            <!-- Only for Semester 2 -->
+            <div id="blockProjectType" class="hide">
+              <div class="label">Тип проекта (2 семестр)</div>
+              <select id="projectType">
+                <option value="" selected disabled>— выбрать —</option>
+                <option value="diorama">Диорама</option>
+                <option value="animation">Анимация</option>
+                <option value="hard">Hard-surface модель</option>
+                <option value="location">Локация</option>
+                <option value="template">Проект из заготовки</option>
+              </select>
+            </div>
+
+            <div class="note" id="extraNote">
+              Выбери параметры, чтобы увидеть критерии.
+            </div>
+
+            <div class="note" id="rankingBox">
+              <b>Ранжирование (оценка по баллам)</b>
+              <div style="margin-top:10px;">
+                <table class="rank-table" aria-label="Ранжирование">
+                  <thead>
+                    <tr><th>Баллы</th><th>Оценка</th></tr>
+                  </thead>
+                  <tbody id="rankTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+      </div>
+    </section>
   </div>
 
 <script>
@@ -371,20 +489,38 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
-// гарантируем 0-балльный вариант в каждом критерии
 function withZeroOption(criterion){
   const hasZero = criterion.options.some(o => o.points === 0);
   if(hasZero) return criterion;
-
-  // Добавляем вариант 0 в конец, чтобы не ломать привычные пункты
-  return {
-    ...criterion,
-    options: [...criterion.options, { label: "Не выполнено / отсутствует", points: 0 }],
-  };
+  return { ...criterion, options: [...criterion.options, { label: "Не выполнено / отсутствует", points: 0 }] };
 }
 
-/* ===== base data ===== */
-const GENERAL_RAW = [
+/* ===== ranking (same for both semesters) ===== */
+const RANKING = [
+  { min: 0,  grade: "2" },
+  { min: 10, grade: "3–" },
+  { min: 20, grade: "3" },
+  { min: 30, grade: "3+" },
+  { min: 40, grade: "4–" },
+  { min: 50, grade: "4" },
+  { min: 60, grade: "4+" },
+  { min: 70, grade: "5–" },
+  { min: 80, grade: "5" },
+  { min: 90, grade: "5+" },
+  { min: 100, grade: "5+/5+" },
+];
+
+function gradeFromScore(score){
+  // берём последнюю ступень, где min <= score
+  let g = RANKING[0].grade;
+  for(const step of RANKING){
+    if(score >= step.min) g = step.grade;
+  }
+  return g;
+}
+
+/* ===== Semester 2 data (твоя текущая логика) ===== */
+const GENERAL_RAW_S2 = [
   {
     id: "curves",
     title: "Кривые",
@@ -423,224 +559,251 @@ const GENERAL_RAW = [
       { label: "Рендер видео или изображение", points: 20 },
       { label: "Файл", points: 10 },
       { label: "Скриншот", points: 5 },
-      // 0 добавим автоматически, если нужно
     ],
   },
 ];
 
-const GENERAL = GENERAL_RAW.map(withZeroOption);
+const GENERAL_S2 = GENERAL_RAW_S2.map(withZeroOption);
 
-const TYPES_RAW = {
+const TYPES_RAW_S2 = {
   diorama: {
     name: "Диорама",
     note: "Плюс к общим критериям: количество объектов и логичность их расположения.",
     criteria: [
-      {
-        id: "dio_objects",
-        title: "Объекты",
-        description: "Количество объектов в сцене",
-        options: [
-          { label: "≥ 5 объектов", points: 20 },
-          { label: "3–4 объекта", points: 10 },
-          { label: "< 3 объектов", points: 5 },
-        ],
-      },
-      {
-        id: "dio_position",
-        title: "Положение",
-        description: "Логичное расположение, без пересечений/левитации, соблюдены пропорции",
-        options: [
-          { label: "Все объекты расположены логично, пропорции соблюдены", points: 20 },
-          { label: "Не соблюдены пропорции", points: 10 },
-          { label: "Есть пересечение или левитация объектов", points: 5 },
-        ],
-      },
+      { id: "dio_objects", title: "Объекты", description: "Количество объектов в сцене",
+        options: [{ label: "≥ 5 объектов", points: 20 },{ label: "3–4 объекта", points: 10 },{ label: "< 3 объектов", points: 5 }] },
+      { id: "dio_position", title: "Положение", description: "Логичное расположение, без пересечений/левитации, соблюдены пропорции",
+        options: [{ label: "Все объекты расположены логично, пропорции соблюдены", points: 20 },{ label: "Не соблюдены пропорции", points: 10 },{ label: "Есть пересечение или левитация объектов", points: 5 }] },
     ]
   },
-
   animation: {
     name: "Анимация",
     note: "Плюс к общим критериям: объекты, плавность движения и длительность (кадры).",
     criteria: [
-      {
-        id: "anim_objects",
-        title: "Объекты",
-        description: "Количество объектов, участвующих в анимации",
-        options: [
-          { label: "≥ 3 объектов", points: 15 },
-          { label: "2 объекта", points: 10 },
-          { label: "1 объект", points: 5 },
-        ],
-      },
-      {
-        id: "anim_motion",
-        title: "Движения",
-        description: "Плавность, отсутствие «ломающейся» анимации",
-        options: [
-          { label: "Все движется плавно, без резких переходов", points: 10 },
-          { label: "В некоторых местах сломана анимация", points: 5 },
-          { label: "Все движется хаотично, неаккуратно", points: 0 }, // 0 уже есть
-        ],
-      },
-      {
-        id: "anim_time",
-        title: "Время",
-        description: "Длительность в кадрах",
-        options: [
-          { label: "≥ 250 кадров", points: 15 },
-          { label: "150–249 кадров", points: 10 },
-          { label: "< 150 кадров", points: 5 },
-        ],
-      },
+      { id: "anim_objects", title: "Объекты", description: "Количество объектов, участвующих в анимации",
+        options: [{ label: "≥ 3 объектов", points: 15 },{ label: "2 объекта", points: 10 },{ label: "1 объект", points: 5 }] },
+      { id: "anim_motion", title: "Движения", description: "Плавность, отсутствие «ломающейся» анимации",
+        options: [{ label: "Все движется плавно, без резких переходов", points: 10 },{ label: "В некоторых местах сломана анимация", points: 5 },{ label: "Все движется хаотично, неаккуратно", points: 0 }] },
+      { id: "anim_time", title: "Время", description: "Длительность в кадрах",
+        options: [{ label: "≥ 250 кадров", points: 15 },{ label: "150–249 кадров", points: 10 },{ label: "< 150 кадров", points: 5 }] },
     ]
   },
-
   hard: {
     name: "Hard-surface модель",
     note: "Плюс к общим критериям: сложность объектов и качество сетки/модели.",
     criteria: [
-      {
-        id: "hard_objects",
-        title: "Объекты",
-        description: "Сложность/количество объектов",
-        options: [
-          { label: "1 сложный или 3 простых объекта", points: 20 },
-          { label: "2 простых объекта", points: 10 },
-          { label: "1 простой объект", points: 5 },
-        ],
-      },
-      {
-        id: "hard_model",
-        title: "Модель",
-        description: "Нет заломов/дыр/двойных вершин, нормали верные, ровная сетка",
-        options: [
-          { label: "Все критерии выполнены", points: 20 },
-          { label: "Не выполнено 3 критерия", points: 10 },
-          { label: "Не выполнено > 3 критериев", points: 5 },
-        ],
-      },
+      { id: "hard_objects", title: "Объекты", description: "Сложность/количество объектов",
+        options: [{ label: "1 сложный или 3 простых объекта", points: 20 },{ label: "2 простых объекта", points: 10 },{ label: "1 простой объект", points: 5 }] },
+      { id: "hard_model", title: "Модель", description: "Нет заломов/дыр/двойных вершин, нормали верные, ровная сетка",
+        options: [{ label: "Все критерии выполнены", points: 20 },{ label: "Не выполнено 3 критерия", points: 10 },{ label: "Не выполнено > 3 критериев", points: 5 }] },
     ]
   },
-
   location: {
     name: "Локация",
     note: "Плюс к общим критериям: объекты, положение и поверхность.",
     criteria: [
-      {
-        id: "loc_objects",
-        title: "Объекты",
-        description: "Количество объектов в локации",
-        options: [
-          { label: "≥ 5 объектов", points: 15 },
-          { label: "3–4 объекта", points: 10 },
-          { label: "< 3 объектов", points: 5 },
-        ],
-      },
-      {
-        id: "loc_position",
-        title: "Положение",
-        description: "Объекты на поверхности, не утоплены; разнообразие; случайный поворот/размер",
-        options: [
-          { label: "Все критерии выполнены", points: 15 },
-          { label: "Не выполнен один из критериев", points: 10 },
-          { label: "Не выполнено > 1 критерия", points: 5 },
-        ],
-      },
-      {
-        id: "loc_surface",
-        title: "Поверхность",
-        description: "Как создана/оформлена поверхность локации",
-        options: [
-          { label: "Пропорциональное редактирование или модификатор Displace", points: 10 },
-          { label: "Аддон A.N.T. Landscape", points: 5 },
-          { label: "Просто плоскость", points: 0 },
-        ],
-      },
+      { id: "loc_objects", title: "Объекты", description: "Количество объектов в локации",
+        options: [{ label: "≥ 5 объектов", points: 15 },{ label: "3–4 объекта", points: 10 },{ label: "< 3 объектов", points: 5 }] },
+      { id: "loc_position", title: "Положение", description: "Объекты на поверхности, не утоплены; разнообразие; случайный поворот/размер",
+        options: [{ label: "Все критерии выполнены", points: 15 },{ label: "Не выполнен один из критериев", points: 10 },{ label: "Не выполнено > 1 критерия", points: 5 }] },
+      { id: "loc_surface", title: "Поверхность", description: "Как создана/оформлена поверхность локации",
+        options: [{ label: "Пропорциональное редактирование или модификатор Displace", points: 10 },{ label: "Аддон A.N.T. Landscape", points: 5 },{ label: "Просто плоскость", points: 0 }] },
     ]
   },
-
   template: {
     name: "Проект из заготовки",
     note: "Основное задание + материалы + освещение + результат.",
     criteria: [
-      {
-        id: "tpl_main",
-        title: "Основное задание заготовки",
-        description: "Насколько полностью выполнено основное задание",
-        options: [
-          { label: "Выполнено полностью", points: 10 },
-          { label: "Выполнено частично", points: 5 },
-          { label: "Не выполнено", points: 0 },
-        ],
-      },
-      // Встроенные общие из статьи: материалы/освещение/результат
-      {
-        ...GENERAL_RAW.find(x => x.id === "materials"),
-        id: "tpl_materials"
-      },
-      {
-        ...GENERAL_RAW.find(x => x.id === "lighting"),
-        id: "tpl_lighting"
-      },
-      {
-        ...GENERAL_RAW.find(x => x.id === "result"),
-        id: "tpl_result"
-      },
+      { id: "tpl_main", title: "Основное задание заготовки", description: "Насколько полностью выполнено основное задание",
+        options: [{ label: "Выполнено полностью", points: 10 },{ label: "Выполнено частично", points: 5 },{ label: "Не выполнено", points: 0 }] },
+      { ...GENERAL_RAW_S2.find(x => x.id === "materials"), id: "tpl_materials" },
+      { ...GENERAL_RAW_S2.find(x => x.id === "lighting"), id: "tpl_lighting" },
+      { ...GENERAL_RAW_S2.find(x => x.id === "result"), id: "tpl_result" },
     ]
   }
 };
 
-// Добавим 0 во все типовые критерии
-const TYPES = Object.fromEntries(
-  Object.entries(TYPES_RAW).map(([k, v]) => [k, { ...v, criteria: v.criteria.map(withZeroOption) }])
+const TYPES_S2 = Object.fromEntries(
+  Object.entries(TYPES_RAW_S2).map(([k,v]) => [k, { ...v, criteria: v.criteria.map(withZeroOption) }])
 );
+
+/* ===== Semester 1 data (упрощённая система) ===== */
+const SEM1_CRITERIA_RAW = [
+  {
+    id: "s1_result",
+    title: "Результат",
+    description: "Что прислано",
+    options: [
+      { label: "Прислан рендер (видео или изображение)", points: 20 },
+      { label: "Прислан файл", points: 10 },
+      { label: "Прислан скриншот", points: 5 },
+    ],
+  },
+  {
+    id: "s1_materials",
+    title: "Материалы",
+    description: "Использование материалов/текстур/свечения",
+    options: [
+      { label: "Есть обычные материалы + текстуры + светящиеся объекты", points: 20 },
+      { label: "Только обычные материалы", points: 10 },
+      { label: "Материалы не используются", points: 0 },
+    ],
+  },
+  {
+    id: "s1_lighting",
+    title: "Освещение",
+    description: "Подсветка объектов в сцене",
+    options: [
+      { label: "Освещение настроено, все объекты подсвечены", points: 10 },
+      { label: "Освещения нет", points: 0 },
+    ],
+  },
+  {
+    id: "s1_models",
+    title: "Модели",
+    description: "Самостоятельно созданные модели / скульптинг / скачанные объекты",
+    options: [
+      { label: "Все модели выполнены учащимся (3–5) или 1 модель через скульптинг", points: 30 },
+      { label: "1–2 модели скачаны, самостоятельно выполнено < 3 моделей", points: 20 },
+      { label: "Более 2 скачанных, самостоятельно создан 1 объект", points: 10 },
+      { label: "Все объекты скачаны (кроме пола) — 0 за всю работу", points: 0 },
+    ],
+  },
+  {
+    id: "s1_animation",
+    title: "Анимация",
+    description: "Наличие анимации",
+    options: [
+      { label: "Есть 1+ анимированный объект (в т.ч. персонаж)", points: 20 },
+      { label: "Есть 1+ анимированный объект (без персонажей)", points: 10 },
+      { label: "Нет анимированных объектов", points: 0 },
+    ],
+  },
+];
+
+const SEM1_CRITERIA = SEM1_CRITERIA_RAW.map(withZeroOption);
 
 /* ===== DOM ===== */
 const els = {
-  type: document.getElementById("projectType"),
-  container: document.getElementById("criteriaContainer"),
-  total: document.getElementById("totalScore"),
-  extraNote: document.getElementById("extraNote"),
+  subtitle: document.getElementById("subtitle"),
+  screenSemester: document.getElementById("screenSemester"),
+  screenApp: document.getElementById("screenApp"),
+
+  btnGoS1: document.getElementById("btnGoS1"),
+  btnGoS2: document.getElementById("btnGoS2"),
+
+  leftTitle: document.getElementById("leftTitle"),
+  btnBack: document.getElementById("btnBack"),
   btnReset: document.getElementById("btnReset"),
   btnCopy: document.getElementById("btnCopy"),
+
+  criteriaContainer: document.getElementById("criteriaContainer"),
+  total: document.getElementById("totalScore"),
+  gradeInline: document.getElementById("gradeInline"),
+
+  extraNote: document.getElementById("extraNote"),
+  projectTypeBlock: document.getElementById("blockProjectType"),
+  projectType: document.getElementById("projectType"),
+
   themeToggle: document.getElementById("themeToggle"),
+  rankBody: document.getElementById("rankTableBody"),
+  rankingBox: document.getElementById("rankingBox"),
 };
 
-let currentTypeKey = "";
-let state = new Map(); // criterionId -> selectedIndex
+let currentSemester = "";   // "s1" | "s2"
+let currentTypeKey = "";    // for s2
+let state = new Map();      // criterionId -> selectedIndex
 
-function buildCriteriaList(typeKey){
-  els.container.innerHTML = "";
+/* ===== render ranking table ===== */
+function renderRankingTable(){
+  els.rankBody.innerHTML = "";
+  // по твоей таблице удобно показывать как ">= X" (кроме первой)
+  for(let i=0; i<RANKING.length; i++){
+    const step = RANKING[i];
+    const tr = document.createElement("tr");
+    const left = (i === 0) ? "< 10 (и 0)" : `≥ ${step.min}`;
+    tr.innerHTML = `<td>${left}</td><td>${step.grade}</td>`;
+    els.rankBody.appendChild(tr);
+  }
+}
+
+/* ===== UI navigation ===== */
+function showSemesterScreen(){
+  currentSemester = "";
+  currentTypeKey = "";
+  state.clear();
+
+  els.screenSemester.classList.remove("hide");
+  els.screenApp.classList.add("hide");
+  els.subtitle.textContent = "Сначала выбери семестр.";
+}
+
+function showAppScreen(semester){
+  currentSemester = semester;
+  currentTypeKey = "";
+  state.clear();
+
+  els.screenSemester.classList.add("hide");
+  els.screenApp.classList.remove("hide");
+
+  renderRankingTable();
+
+  if(semester === "s2"){
+    els.subtitle.textContent = "2 семестр: выбери тип проекта и выставь критерии.";
+    els.leftTitle.textContent = "Критерии оценивания (2 семестр)";
+    els.projectTypeBlock.classList.remove("hide");
+    els.projectType.value = ""; // сброс
+    els.criteriaContainer.innerHTML = `<div class="note">Выбери тип проекта справа.</div>`;
+    els.extraNote.textContent = "К каждому типу проектов применяется основной набор критериев + критерии для этого типа. Для проекта из заготовки — отдельный набор.";
+    setTotal(0);
+  }else{
+    els.subtitle.textContent = "1 семестр: выставь упрощённые критерии.";
+    els.leftTitle.textContent = "Критерии оценивания (1 семестр)";
+    els.projectTypeBlock.classList.add("hide");
+    els.extraNote.textContent = "Упрощённая система 1 семестра: результат / материалы / освещение / модели / анимация.";
+    buildCriteriaForSemester1();
+  }
+}
+
+/* ===== build criteria ===== */
+function buildCriteriaForSemester1(){
+  els.criteriaContainer.innerHTML = "";
+  state.clear();
+
+  // default = 0 points
+  for(const c of SEM1_CRITERIA){
+    const zeroIdx = c.options.findIndex(o => o.points === 0);
+    state.set(c.id, zeroIdx >= 0 ? zeroIdx : 0);
+  }
+
+  renderSection("Критерии 1 семестра", SEM1_CRITERIA);
+  recalcTotal();
+}
+
+function buildCriteriaForSemester2(typeKey){
+  els.criteriaContainer.innerHTML = "";
 
   if(!typeKey){
-    els.container.innerHTML = `<div class="note">Сначала выбери тип проекта справа.</div>`;
+    els.criteriaContainer.innerHTML = `<div class="note">Выбери тип проекта справа.</div>`;
     setTotal(0);
     return;
   }
 
-  const type = TYPES[typeKey];
+  const type = TYPES_S2[typeKey];
   els.extraNote.textContent = type.note;
 
-  // Формируем список критериев
-  let list = [];
-  if(typeKey === "template"){
-    list = [...type.criteria];
-  } else {
-    list = [...GENERAL, ...type.criteria];
-  }
+  let list = (typeKey === "template") ? [...type.criteria] : [...GENERAL_S2, ...type.criteria];
 
-  // Ставим по умолчанию 0 баллов: выбираем индекс опции, где points === 0
   state.clear();
   for(const c of list){
     const zeroIdx = c.options.findIndex(o => o.points === 0);
     state.set(c.id, zeroIdx >= 0 ? zeroIdx : 0);
   }
 
-  // Рендерим секции
   if(typeKey !== "template"){
-    renderSection("Общие критерии", GENERAL);
+    renderSection("Общие критерии", GENERAL_S2);
     renderSection(`Критерии типа: ${type.name}`, type.criteria);
-  } else {
+  }else{
     renderSection(`Критерии: ${type.name}`, type.criteria);
   }
 
@@ -705,7 +868,7 @@ function renderSection(title, criteria){
   }
 
   sec.appendChild(body);
-  els.container.appendChild(sec);
+  els.criteriaContainer.appendChild(sec);
 }
 
 function updateRowPoints(row, criterion){
@@ -716,50 +879,88 @@ function updateRowPoints(row, criterion){
 
 function recalcTotal(){
   let sum = 0;
-  const type = TYPES[currentTypeKey];
-  if(!type){ setTotal(0); return; }
 
-  let list = [];
-  if(currentTypeKey === "template") list = [...type.criteria];
-  else list = [...GENERAL, ...type.criteria];
+  if(currentSemester === "s1"){
+    for(const c of SEM1_CRITERIA){
+      const idx = state.get(c.id) ?? 0;
+      sum += (c.options[idx]?.points ?? 0);
+    }
+  }else if(currentSemester === "s2"){
+    const type = TYPES_S2[currentTypeKey];
+    if(!type){ setTotal(0); return; }
 
-  for(const c of list){
-    const idx = state.get(c.id) ?? 0;
-    sum += (c.options[idx]?.points ?? 0);
+    const list = (currentTypeKey === "template") ? [...type.criteria] : [...GENERAL_S2, ...type.criteria];
+    for(const c of list){
+      const idx = state.get(c.id) ?? 0;
+      sum += (c.options[idx]?.points ?? 0);
+    }
+  }else{
+    setTotal(0);
+    return;
   }
+
   setTotal(sum);
 }
 
 function setTotal(n){
   els.total.textContent = String(n);
+  const g = gradeFromScore(n);
+  els.gradeInline.textContent = `(${g})`;
 }
 
 /* ===== actions ===== */
 function reset(){
-  if(!currentTypeKey) return;
-  buildCriteriaList(currentTypeKey);
+  if(currentSemester === "s1"){
+    buildCriteriaForSemester1();
+    return;
+  }
+  if(currentSemester === "s2"){
+    if(!currentTypeKey){
+      els.criteriaContainer.innerHTML = `<div class="note">Выбери тип проекта справа.</div>`;
+      setTotal(0);
+      return;
+    }
+    buildCriteriaForSemester2(currentTypeKey);
+  }
 }
 
 function copySummary(){
-  if(!currentTypeKey){
-    alert("Сначала выбери тип проекта.");
+  if(!currentSemester){
+    alert("Сначала выбери семестр.");
     return;
   }
 
-  const type = TYPES[currentTypeKey];
-  let list = currentTypeKey === "template"
-    ? [...type.criteria]
-    : [...GENERAL, ...type.criteria];
+  const score = Number(els.total.textContent || "0");
+  const grade = gradeFromScore(score);
 
   const lines = [];
-  lines.push(`Тип проекта: ${type.name}`);
-  lines.push(`Итог: ${els.total.textContent} баллов`);
+  lines.push(`Семестр: ${currentSemester === "s1" ? "1" : "2"}`);
+
+  if(currentSemester === "s2"){
+    if(!currentTypeKey){
+      alert("Выбери тип проекта.");
+      return;
+    }
+    lines.push(`Тип проекта: ${TYPES_S2[currentTypeKey].name}`);
+  }
+
+  lines.push(`Итог: ${score} баллов (${grade})`);
   lines.push(`—`);
 
-  for(const c of list){
-    const idx = state.get(c.id) ?? 0;
-    const opt = c.options[idx];
-    lines.push(`${c.title}: ${opt.label} (+${opt.points})`);
+  if(currentSemester === "s1"){
+    for(const c of SEM1_CRITERIA){
+      const idx = state.get(c.id) ?? 0;
+      const opt = c.options[idx];
+      lines.push(`${c.title}: ${opt.label} (+${opt.points})`);
+    }
+  }else{
+    const type = TYPES_S2[currentTypeKey];
+    const list = (currentTypeKey === "template") ? [...type.criteria] : [...GENERAL_S2, ...type.criteria];
+    for(const c of list){
+      const idx = state.get(c.id) ?? 0;
+      const opt = c.options[idx];
+      lines.push(`${c.title}: ${opt.label} (+${opt.points})`);
+    }
   }
 
   const text = lines.join("\n");
@@ -769,7 +970,6 @@ function copySummary(){
     els.btnCopy.textContent = "Скопировано ✓";
     setTimeout(() => els.btnCopy.textContent = old, 1200);
   }).catch(() => {
-    // запасной вариант
     prompt("Скопируй вручную:", text);
   });
 }
@@ -787,13 +987,22 @@ function setTheme(isDark){
 })();
 
 /* ===== wire up ===== */
-els.type.addEventListener("change", () => {
-  currentTypeKey = els.type.value;
-  buildCriteriaList(currentTypeKey);
-});
+els.btnGoS1.addEventListener("click", () => showAppScreen("s1"));
+els.btnGoS2.addEventListener("click", () => showAppScreen("s2"));
+els.btnBack.addEventListener("click", showSemesterScreen);
+
 els.btnReset.addEventListener("click", reset);
 els.btnCopy.addEventListener("click", copySummary);
+
 els.themeToggle.addEventListener("change", () => setTheme(els.themeToggle.checked));
+
+els.projectType.addEventListener("change", () => {
+  currentTypeKey = els.projectType.value;
+  buildCriteriaForSemester2(currentTypeKey);
+});
+
+/* init */
+showSemesterScreen();
 </script>
 </body>
 </html>
