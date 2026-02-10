@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Оценивание проектов Blender</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --card2:#0f1730;
+      --text:#e9ecff;
+      --muted:#b7c0ffcc;
+      --line:#2a3566;
+      --accent:#7aa2ff;
+      --good:#4ade80;
+      --bad:#fb7185;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #172355 0%, var(--bg) 45%, #070b16 100%);
+      color:var(--text);
+    }
+    header{
+      padding: 28px 18px 10px;
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size: clamp(22px, 3.3vw, 34px);
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin:0;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    main{
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 18px 18px 40px;
+      display: grid;
+      grid-template-columns: 1.45fr .55fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px){
+      main{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid rgba(122,162,255,.18);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header{
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background: rgba(0,0,0,.18);
+      border-bottom: 1px solid rgba(122,162,255,.16);
+      gap: 12px;
+    }
+    .card-title{
+      font-weight: 700;
+      letter-spacing: .2px;
+      margin:0;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .card-body{
+      padding: 14px 16px 16px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1.05fr 1.4fr .55fr;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px dashed rgba(122,162,255,.14);
+      align-items: start;
+    }
+    .row:last-child{ border-bottom: none; }
+
+    .crit{
+      font-weight: 650;
+      font-size: 14px;
+      margin: 0 0 4px;
+    }
+    .desc{
+      margin: 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    select{
+      width:100%;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(122,162,255,.25);
+      background: rgba(18,26,51,.7);
+      color: var(--text);
+      outline: none;
+    }
+    select:focus{
+      border-color: rgba(122,162,255,.6);
+      box-shadow: 0 0 0 3px rgba(122,162,255,.12);
+    }
+
+    .pts{
+      display:flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(122,162,255,.24);
+      background: rgba(15,23,48,.65);
+      font-weight: 750;
+      font-size: 13px;
+      min-width: 92px;
+      justify-content: flex-end;
+    }
+    .badge .num{ color: var(--accent); }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      text-align:right;
+      margin:0;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    button{
+      cursor:pointer;
+      border-radius: 12px;
+      border: 1px solid rgba(122,162,255,.26);
+      background: rgba(18,26,51,.8);
+      color: var(--text);
+      padding: 10px 12px;
+      font-weight: 650;
+    }
+    button:hover{
+      border-color: rgba(122,162,255,.5);
+      background: rgba(18,26,51,.95);
+    }
+    .primary{
+      border-color: rgba(122,162,255,.55);
+      background: rgba(122,162,255,.16);
+    }
+
+    .total{
+      display:flex;
+      align-items: center;
+      justify-content: space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(122,162,255,.16);
+      background: rgba(0,0,0,.18);
+    }
+    .total strong{
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+    .total .sum{
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      color: var(--text);
+      display:flex;
+      align-items:baseline;
+      gap:6px;
+    }
+    .total .sum small{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .side .card-body{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .projectType{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .label{
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .note{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(122,162,255,.18);
+      background: rgba(15,23,48,.55);
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    .mini{
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.35;
+    }
+
+    .ok{ color: var(--good); }
+    .warn{ color: var(--bad); }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Подсчёт баллов за проекты Blender</h1>
+    <p class="sub">Выбери тип проекта → выставь пункты в выпадающих списках → итоговый балл посчитается автоматически.</p>
+  </header>
+
+  <main>
+    <!-- LEFT: criteria -->
+    <section class="card">
+      <div class="card-header">
+        <p class="card-title">Критерии оценивания</p>
+        <div class="controls">
+          <button id="btnReset">Сбросить</button>
+          <button class="primary" id="btnCopy">Скопировать итог</button>
+        </div>
+      </div>
+
+      <div class="card-body" id="criteriaContainer">
+        <p class="mini">Сначала выбери тип проекта справа.</p>
+      </div>
+
+      <div class="total">
+        <strong>Финальный балл</strong>
+        <div class="sum"><span id="totalScore">0</span> <small>баллов</small></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: controls -->
+    <aside class="card side">
+      <div class="card-header">
+        <p class="card-title">Параметры</p>
+      </div>
+      <div class="card-body">
+        <div class="projectType">
+          <div class="label">Тип проекта</div>
+          <select id="projectType">
+            <option value="" selected disabled>— выбери —</option>
+            <option value="diorama">Диорама</option>
+            <option value="animation">Анимация</option>
+            <option value="hard">Hard-surface модель</option>
+            <option value="location">Локация</option>
+            <option value="template">Проект из заготовки</option>
+          </select>
+        </div>
+
+        <div class="note" id="typeNote">
+          Подсказка: «Проект из заготовки» использует встроенные критерии (как в вашей статье) и не показывает общий пункт «Кривые».
+        </div>
+
+        <div class="note">
+          <div style="font-weight:800; margin-bottom:6px; color: var(--text);">Как пользоваться</div>
+          <ol class="mini" style="margin:0; padding-left: 18px;">
+            <li>Выбери тип проекта.</li>
+            <li>Пройди все пункты и выбери вариант.</li>
+            <li>Смотри баллы справа в каждой строке и общий итог снизу.</li>
+          </ol>
+        </div>
+
+        <p class="mini">
+          Если захочешь — могу добавить: имя ученика, комментарии, сохранение результатов в JSON/CSV, печать, тёмную/светлую тему и т.п.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+<script>
+/** Данные критериев **/
+const GENERAL = [
+  {
+    id: "curves",
+    title: "Кривые",
+    description: "В проекте используются кривые для анимации или создания объектов",
+    options: [
+      { label: "Используются кривые", points: 10 },
+      { label: "В проекте не используются кривые", points: 0 },
+    ],
+    defaultIndex: 1
+  },
+  {
+    id: "materials",
+    title: "Материалы",
+    description: "Качество и проработка материалов",
+    options: [
+      { label: "Используются текстуры + 1 материал создан с помощью нодового редактора", points: 20 },
+      { label: "Используются текстуры (нет созданного вручную)", points: 15 },
+      { label: "Используется только базовый цвет", points: 10 },
+      { label: "Материалы не на всех объектах", points: 0 },
+    ],
+    defaultIndex: 3
+  },
+  {
+    id: "lighting",
+    title: "Освещение",
+    description: "Логика света и читаемость сцены",
+    options: [
+      { label: "Освещение логично расположено, подсвечиваются нужные объекты", points: 10 },
+      { label: "Освещение есть в проекте, но выставлено не грамотно", points: 5 },
+      { label: "Нет освещения", points: 0 },
+    ],
+    defaultIndex: 2
+  },
+  {
+    id: "result",
+    title: "Результат",
+    description: "Формат сдачи / финальный вывод",
+    options: [
+      { label: "Рендер видео или изображение", points: 20 },
+      { label: "Файл", points: 10 },
+      { label: "Скриншот", points: 5 },
+    ],
+    defaultIndex: 2
+  },
+];
+
+const TYPES = {
+  diorama: {
+    name: "Диорама",
+    note: "Плюс к общим критериям: количество объектов и логичность их расположения.",
+    criteria: [
+      {
+        id: "dio_objects",
+        title: "Объекты",
+        description: "Количество объектов в сцене",
+        options: [
+          { label: "≥ 5 объектов", points: 20 },
+          { label: "3–4 объекта", points: 10 },
+          { label: "< 3 объектов", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "dio_position",
+        title: "Положение",
+        description: "Логичное расположение, без пересечений/левитации, соблюдены пропорции",
+        options: [
+          { label: "Все объекты расположены логично, пропорции соблюдены", points: 20 },
+          { label: "Не соблюдены пропорции", points: 10 },
+          { label: "Есть пересечение или левитация объектов", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+    ]
+  },
+
+  animation: {
+    name: "Анимация",
+    note: "Плюс к общим критериям: объекты, плавность движения и длительность (кадры). Пункты про ограничители/механизмы/IK — без баллов (в таблице не было).",
+    criteria: [
+      {
+        id: "anim_objects",
+        title: "Объекты",
+        description: "Количество объектов, участвующих в анимации",
+        options: [
+          { label: "≥ 3 объектов", points: 15 },
+          { label: "2 объекта", points: 10 },
+          { label: "1 объект", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "anim_motion",
+        title: "Движения",
+        description: "Плавность, отсутствие «ломающейся» анимации",
+        options: [
+          { label: "Все движется плавно, без резких переходов", points: 10 },
+          { label: "В некоторых местах сломана анимация", points: 5 },
+          { label: "Все движется хаотично, неаккуратно", points: 0 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "anim_time",
+        title: "Время",
+        description: "Длительность в кадрах",
+        options: [
+          { label: "≥ 250 кадров", points: 15 },
+          { label: "150–249 кадров", points: 10 },
+          { label: "< 150 кадров", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+    ]
+  },
+
+  hard: {
+    name: "Hard-surface модель",
+    note: "Плюс к общим критериям: сложность объектов и качество сетки/модели.",
+    criteria: [
+      {
+        id: "hard_objects",
+        title: "Объекты",
+        description: "Сложность/количество объектов",
+        options: [
+          { label: "1 сложный или 3 простых объекта", points: 20 },
+          { label: "2 простых объекта", points: 10 },
+          { label: "1 простой объект", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "hard_model",
+        title: "Модель",
+        description: "Нет заломов/дыр/двойных вершин, нормали верные, ровная сетка",
+        options: [
+          { label: "Все критерии выполнены", points: 20 },
+          { label: "Не выполнено 3 критерия", points: 10 },
+          { label: "Не выполнено > 3 критериев", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+    ]
+  },
+
+  location: {
+    name: "Локация",
+    note: "Плюс к общим критериям: объекты, положение и поверхность. Пункт «Геометрические ноды» указан без шкалы — оставлен как напоминание.",
+    criteria: [
+      {
+        id: "loc_objects",
+        title: "Объекты",
+        description: "Количество объектов в локации",
+        options: [
+          { label: "≥ 5 объектов", points: 15 },
+          { label: "3–4 объекта", points: 10 },
+          { label: "< 3 объектов", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "loc_position",
+        title: "Положение",
+        description: "Объекты на поверхности, не утоплены; разнообразие; случайный поворот/размер",
+        options: [
+          { label: "Все критерии выполнены", points: 15 },
+          { label: "Не выполнен один из критериев", points: 10 },
+          { label: "Не выполнено > 1 критерия", points: 5 },
+        ],
+        defaultIndex: 2
+      },
+      {
+        id: "loc_surface",
+        title: "Поверхность",
+        description: "Как создана/оформлена поверхность локации",
+        options: [
+          { label: "Пропорциональное редактирование или модификатор Displace", points: 10 },
+          { label: "Аддон A.N.T. Landscape", points: 5 },
+          { label: "Просто плоскость", points: 0 },
+        ],
+        defaultIndex: 2
+      },
+    ]
+  },
+
+  template: {
+    name: "Проект из заготовки",
+    note: "Оценка ограничена логикой заготовки; здесь критерии — как в вашей статье: основное задание + материалы + освещение + результат.",
+    // ВНИМАНИЕ: в таблице для заготовки нет пункта «Кривые», поэтому в этом типе НЕ добавляем GENERAL полностью.
+    criteria: [
+      {
+        id: "tpl_main",
+        title: "Основное задание заготовки",
+        description: "Насколько полностью выполнено основное задание",
+        options: [
+          { label: "Выполнено полностью", points: 10 },
+          { label: "Выполнено частично", points: 5 },
+          { label: "Не выполнено", points: 0 },
+        ],
+        defaultIndex: 2
+      },
+      // Встроенные «общие» из статьи:
+      {
+        ...GENERAL.find(x => x.id === "materials"),
+        id: "tpl_materials"
+      },
+      {
+        ...GENERAL.find(x => x.id === "lighting"),
+        id: "tpl_lighting"
+      },
+      {
+        ...GENERAL.find(x => x.id === "result"),
+        id: "tpl_result"
+      },
+    ]
+  }
+};
+
+const els = {
+  type: document.getElementById("projectType"),
+  container: document.getElementById("criteriaContainer"),
+  total: document.getElementById("totalScore"),
+  note: document.getElementById("typeNote"),
+  btnReset: document.getElementById("btnReset"),
+  btnCopy: document.getElementById("btnCopy"),
+};
+
+let currentTypeKey = "";
+let state = new Map(); // criterionId -> selectedIndex
+
+function buildCriteriaList(typeKey){
+  els.container.innerHTML = "";
+
+  if(!typeKey){
+    els.container.innerHTML = `<p class="mini">Сначала выбери тип проекта справа.</p>`;
+    setTotal(0);
+    return;
+  }
+
+  const type = TYPES[typeKey];
+  els.note.textContent = type.note;
+
+  // Для всех типов, кроме template: показываем общие + типовые.
+  let list = [];
+  if(typeKey === "template"){
+    list = [...type.criteria];
+  } else {
+    list = [...GENERAL, ...type.criteria];
+  }
+
+  // Инициализируем state по умолчанию
+  state.clear();
+  for(const c of list){
+    state.set(c.id, c.defaultIndex ?? 0);
+  }
+
+  // Группировки
+  if(typeKey !== "template"){
+    renderSection("Общие критерии", GENERAL);
+    renderSection(`Критерии типа: ${type.name}`, type.criteria);
+  } else {
+    renderSection(`Критерии: ${type.name}`, type.criteria);
+  }
+
+  recalcTotal();
+}
+
+function renderSection(title, criteria){
+  const wrapper = document.createElement("div");
+  wrapper.className = "card";
+  wrapper.style.marginBottom = "14px";
+  wrapper.style.borderRadius = "14px";
+  wrapper.style.boxShadow = "none";
+  wrapper.style.border = "1px solid rgba(122,162,255,.14)";
+  wrapper.style.background = "rgba(15,23,48,.35)";
+
+  const header = document.createElement("div");
+  header.className = "card-header";
+  header.style.borderBottom = "1px solid rgba(122,162,255,.12)";
+  header.style.background = "rgba(0,0,0,.16)";
+  header.innerHTML = `<p class="card-title">${escapeHtml(title)}</p>`;
+  wrapper.appendChild(header);
+
+  const body = document.createElement("div");
+  body.className = "card-body";
+  body.style.paddingTop = "8px";
+
+  for(const c of criteria){
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const left = document.createElement("div");
+    left.innerHTML = `
+      <p class="crit">${escapeHtml(c.title)}</p>
+      <p class="desc">${escapeHtml(c.description || "")}</p>
+    `;
+
+    const mid = document.createElement("div");
+    const sel = document.createElement("select");
+    sel.setAttribute("data-crit-id", c.id);
+
+    c.options.forEach((opt, i) => {
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = `${opt.label} — ${opt.points} б.`;
+      sel.appendChild(o);
+    });
+
+    sel.value = String(state.get(c.id) ?? 0);
+
+    sel.addEventListener("change", () => {
+      state.set(c.id, Number(sel.value));
+      updateRowPoints(row, c);
+      recalcTotal();
+    });
+
+    mid.appendChild(sel);
+
+    const right = document.createElement("div");
+    right.className = "pts";
+    right.innerHTML = `
+      <div class="badge">+ <span class="num">0</span></div>
+      <p class="hint">за пункт</p>
+    `;
+
+    row.appendChild(left);
+    row.appendChild(mid);
+    row.appendChild(right);
+
+    body.appendChild(row);
+
+    updateRowPoints(row, c);
+  }
+
+  wrapper.appendChild(body);
+  els.container.appendChild(wrapper);
+}
+
+function updateRowPoints(row, criterion){
+  const idx = state.get(criterion.id) ?? 0;
+  const pts = criterion.options[idx]?.points ?? 0;
+  row.querySelector(".num").textContent = String(pts);
+}
+
+function recalcTotal(){
+  let sum = 0;
+
+  // Собираем фактический список критериев по текущему типу
+  const type = TYPES[currentTypeKey];
+  if(!type) { setTotal(0); return; }
+
+  let list = [];
+  if(currentTypeKey === "template"){
+    list = [...type.criteria];
+  } else {
+    list = [...GENERAL, ...type.criteria];
+  }
+
+  for(const c of list){
+    const idx = state.get(c.id) ?? 0;
+    sum += (c.options[idx]?.points ?? 0);
+  }
+
+  setTotal(sum);
+}
+
+function setTotal(n){
+  els.total.textContent = String(n);
+}
+
+function reset(){
+  if(!currentTypeKey) return;
+  buildCriteriaList(currentTypeKey);
+}
+
+function copySummary(){
+  if(!currentTypeKey) return;
+
+  const type = TYPES[currentTypeKey];
+  let list = [];
+  if(currentTypeKey === "template") list = [...type.criteria];
+  else list = [...GENERAL, ...type.criteria];
+
+  const lines = [];
+  lines.push(`Тип проекта: ${type.name}`);
+  lines.push(`Итог: ${els.total.textContent} баллов`);
+  lines.push(`—`);
+
+  for(const c of list){
+    const idx = state.get(c.id) ?? 0;
+    const opt = c.options[idx];
+    lines.push(`${c.title}: ${opt.label} (+${opt.points})`);
+  }
+
+  const text = lines.join("\n");
+  navigator.clipboard.writeText(text).then(() => {
+    els.btnCopy.textContent = "Скопировано ✓";
+    setTimeout(() => els.btnCopy.textContent = "Скопировать итог", 1200);
+  }).catch(() => {
+    alert("Не удалось скопировать. Можно выделить текст вручную:\n\n" + text);
+  });
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/** события **/
+els.type.addEventListener("change", () => {
+  currentTypeKey = els.type.value;
+  buildCriteriaList(currentTypeKey);
+});
+
+els.btnReset.addEventListener("click", reset);
+els.btnCopy.addEventListener("click", copySummary);
+</script>
+</body>
+</html>
